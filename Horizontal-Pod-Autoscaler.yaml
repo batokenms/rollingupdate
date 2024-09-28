@@ -17,3 +17,8 @@ spec:
         target:
           type: Utilization
           averageUtilization: 50  # Scale based on 50% average CPU utilization across pods
+
+# minReplicas: 10: Ensures that your deployment will always run a minimum of 10 pods.
+# maxReplicas: 20: Allows scaling up to a maximum of 20 pods when needed.
+# averageUtilization: 50: The HPA will scale the number of replicas dynamically to maintain an average CPU usage of 50% across all the pods. 
+# If the CPU usage goes above 50%, the HPA will add more pods (up to 20), and if it goes below 50%, it will reduce the pods (no less than 10).
