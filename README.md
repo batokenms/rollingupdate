@@ -14,11 +14,11 @@ Applying the Configuration
 
 Save the YAML for the NGINX deployment and service in nginx-deployment.yaml and apply it:
 
-kubectl apply -f nginx-deployment.yaml
+# kubectl apply -f nginx-deployment.yaml
 
 Save the YAML for the Apache deployment and service in apache-deployment.yaml and apply it:
 
-kubectl apply -f apache-deployment.yaml
+# kubectl apply -f apache-deployment.yaml
 
 These two deployments and services will allow you to run both NGINX and Apache independently, exposing each via separate services. 
 
