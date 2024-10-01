@@ -38,3 +38,127 @@ kubectl apply -f nginx-ingress-service.yaml
 kubectl get svc -n monitoring nginx-ingress
 
 # You will use this IP address (and port) to access the service externally (e.g., http://<EXTERNAL_IP>:30080).
+
+# Part 2: Deploy Your NGINX Application
+# 2.1 Deploy NGINX (as per your provided YAML)
+# Now that the NGINX controller is installed, let's deploy your application:
+# Here is your NGINX deployment and service:
+# NGINX Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: monitoring
+  labels:
+    app: nginx
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: nginx
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+---
+# NGINX Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: monitoring
+  labels:
+    app: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+
+
+# Save this manifest as nginx-deployment.yaml and apply it:
+
+kubectl apply -f nginx-deployment.yaml
+
+# Part 3: Install Istio and Configure Service Mesh
+# 3.1 Install Istio
+# You can install Istio using the following commands:
+
+curl -L https://istio.io/downloadIstio | sh -
+cd istio-1.17.x # Change this to the latest version
+export PATH=$PWD/bin:$PATH
+
+# Install Istio with the default profile:
+
+istioctl install --set profile=default -y
+
+# Label your namespace monitoring to enable automatic sidecar injection:
+
+kubectl label namespace monitoring istio-injection=enabled
+
+# Configure Istio Gateway and VirtualService
+# Now that Istio is installed and enabled for the monitoring namespace, let’s set up the Istio ingress gateway and virtual service to route traffic to the NGINX service.
+# Here are the manifests for the Istio Gateway and VirtualService:
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: nginx-gateway
+  namespace: monitoring
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: nginx-virtual-service
+  namespace: monitoring
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - nginx-gateway
+  http:
+  - route:
+    - destination:
+        host: nginx-service
+        port:
+          number: 80
+
+# Save this manifest as istio-gateway-virtualservice.yaml and apply it:
+
+kubectl apply -f istio-gateway-virtualservice.yaml
+
+# 3.3 Access NGINX Through Istio Ingress Gateway
+# You can now access your NGINX service via the Istio ingress gateway. Get the external IP of the Istio ingress gateway:
+
+kubectl get svc -n istio-system istio-ingressgateway
+
+# Once you have the external IP, you can access the service through this IP on port 80:
+
+
+http://<EXTERNAL_IP>
+
