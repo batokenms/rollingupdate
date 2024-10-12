@@ -1,0 +1,50 @@
+# NGINX Deployment
+apiVersion: apps/v1
+kind: Deployment         # In this case we are using kind to specify the Kubernetes object the manifests represent
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: nginx
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        resources:                   # Add this section for resource limits
+          limits:
+            cpu: "500m"              # Max 500 millicores of CPU
+            memory: "512Mi"          # Max 512 MiB of memory
+          requests:
+            cpu: "250m"              # Request 250 millicores of CPU
+            memory: "256Mi"          # Request 256 MiB of memory
+---
+# NGINX Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: nginx
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: NodePort  # Use LoadBalancer for cloud environments
